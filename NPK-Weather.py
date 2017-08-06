@@ -18,7 +18,7 @@ import json
 import arrow
 import console
 import datetime
-
+import location
 
 __app_name__ = "The NPK Weather App"
 __author__ = "Victor Domingos"
@@ -31,11 +31,15 @@ __status__ = "beta"
 
 # ---------- Set these variables before use ----------
 # Request an API key at: http://openweathermap.org/
-APIKEY = 'APIKEY'
+APIKEY = '746310c71b33370d5655e5724893b037'
 API_URL_CURRENT = 'http://api.openweathermap.org/data/2.5/weather'
 API_URL = 'http://api.openweathermap.org/data/2.5/forecast'
 
+# Default location to present in case it is not possible to obtain current location.
 LOCATION = 'Braga,pt'
+
+# Get current location from the device's GPS?
+USE_LOCATION_SERVICES = True
 
 HEADER_FONTSIZE = 16
 TITLE_FONTSIZE = 12
@@ -47,11 +51,11 @@ TODAY_FONTSIZE2 = 13
 DETAILED = False
 
 # Set accordingly with Pythonista app current settings
-DARK_MODE = False
+DARK_MODE = True
 # ----------------------------------------------------
 
 
-def config_consola():
+def config_consola(localizacao):
     '''
     Sets console font size and color for Pythonista on iOS
     '''
@@ -64,7 +68,7 @@ def config_consola():
     else:
         console.set_color(0.2, 0.5, 1)
         
-    print("{} ({})".format(__app_name__, LOCATION))
+    print("{} ({})".format(__app_name__, localizacao))
     console.set_font("Menlo-Regular", 6.7)
     
     if DARK_MODE:
@@ -79,6 +83,18 @@ def config_consola():
         console.set_color(1, 1, 1)
     else:
         console.set_color(0,0,0)
+
+
+def obter_localizacao():
+    try:
+        coordinates = location.get_location()
+        results = location.reverse_geocode(coordinates)
+        cidade = results[0]['City']
+        pais = results[0]['CountryCode']
+        return '{},{}'.format(cidade,pais)
+    except Exception as e:
+        print('Não foi possível obter a localização atual.\nA utilizar predefinição...\n')
+        return LOCATION
         
 
 def dayNameFromWeekday(weekday):
@@ -139,20 +155,22 @@ def formatar_tempo(tempo,icone,chuva,ahora):
     return (tempo, icone)
     
 
-def get_weather_data(kind='forecast'):
+def get_weather_data(location=None, kind='forecast'):
     if kind == 'forecast':
         api_URL = API_URL
     else:
         api_URL = API_URL_CURRENT
         
     try:            
-        params = {'q': LOCATION,
+        console.show_activity()
+        params = {'q': location,
                   'APPID': APIKEY,
                   'units': 'metric',
                   'lang': 'pt',
                   'mode': 'json'}
                   
         json_data = requests.get(api_URL, params=params, timeout=(1,2)).json()
+        console.hide_activity()
         return json_data
         
     except Exception as e:            
@@ -160,8 +178,8 @@ def get_weather_data(kind='forecast'):
         sys.exit(1)
 
 
-def mostra_previsao():
-    previsoes = get_weather_data(kind='forecast')['list']
+def mostra_previsao(localizacao):
+    previsoes = get_weather_data(location=localizacao,kind='forecast')['list']
     agora = arrow.now().time().hour
     aagora = arrow.now()
     
@@ -248,8 +266,8 @@ def mostra_previsao():
         data_anterior = data
         
         
-def mostra_estado_atual():
-    estado = get_weather_data(kind='current')
+def mostra_estado_atual(localizacao):
+    estado = get_weather_data(location=localizacao, kind='current')
     adata = arrow.get(estado['dt']).to('local')
     ahora = adata.to('local').format('HH')+'h'
     temperatura_int = int(estado['main']['temp'])
@@ -331,6 +349,12 @@ def formatar_chuva(tempo, que_chuva):
         
 
 if __name__ == "__main__":
-    config_consola()
-    mostra_estado_atual()
-    mostra_previsao()
+    console.show_activity()
+    if USE_LOCATION_SERVICES:
+        localizacao = obter_localizacao()
+    else:
+        localizacao = LOCATION
+    console.hide_activity()
+    config_consola(localizacao)
+    mostra_estado_atual(localizacao)
+    mostra_previsao(localizacao)
