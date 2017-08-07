@@ -31,7 +31,7 @@ __status__ = "beta"
 
 # ---------- Set these variables before use ----------
 # Request an API key at: http://openweathermap.org/
-APIKEY = '746310c71b33370d5655e5724893b037'
+APIKEY = 'APIKEY'
 API_URL_CURRENT = 'http://api.openweathermap.org/data/2.5/weather'
 API_URL = 'http://api.openweathermap.org/data/2.5/forecast'
 
@@ -67,8 +67,14 @@ def config_consola(localizacao):
         console.set_color(0.5, 0.8, 1)
     else:
         console.set_color(0.2, 0.5, 1)
+    
+    line_length = 32
+    if len(localizacao+__app_name__+' ')> line_length:
+        str_title = "{}\n({})".format(__app_name__, localizacao)
+    else:
+        str_title = "{} ({})".format(__app_name__, localizacao)
         
-    print("{} ({})".format(__app_name__, localizacao))
+    print(str_title)
     console.set_font("Menlo-Regular", 6.7)
     
     if DARK_MODE:
