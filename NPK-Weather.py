@@ -24,7 +24,7 @@ __app_name__ = "The NPK Weather App"
 __author__ = "Victor Domingos"
 __copyright__ = "© 2017 Victor Domingos"
 __license__ = "Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)"
-__version__ = "1.0"
+__version__ = "1.1"
 __email__ = "info@victordomingos.com"
 __status__ = "beta"
 
@@ -110,10 +110,13 @@ def dayNameFromWeekday(weekday):
 
 
 def converter_vento(graus, metros_p_segundo):
-    direcoes = ["N","NE","E","SE","S","SO","O","NO","N"]
-    posicao = int((graus+57.5)/45)-1
-    kmph = int(metros_p_segundo*3.6)
-    return (direcoes[posicao], kmph)
+    if graus != 0:
+        direcoes = ["N","NE","E","SE","S","SO","O","NO","N"]
+        posicao = int((graus+57.5)/45)-1
+        kmph = int(metros_p_segundo*3.6)
+        return (direcoes[posicao], kmph)
+    else:
+        return ('',kmph)
 
 
 def obter_nuvens(json):
@@ -175,7 +178,7 @@ def get_weather_data(location=None, kind='forecast'):
                   'lang': 'pt',
                   'mode': 'json'}
                   
-        json_data = requests.get(api_URL, params=params, timeout=(1,2)).json()
+        json_data = requests.get(api_URL, params=params, timeout=(2,5)).json()
         console.hide_activity()
         return json_data
         
@@ -280,8 +283,17 @@ def mostra_estado_atual(localizacao):
     temperatura = str(temperatura_int)+'°'
     tempo = estado['weather'][0]['description'].title()
     pressao = str(estado['main']['pressure'])+'hPa'
-    vento_dir = estado['wind']['deg']
-    vento_veloc = estado['wind']['speed']
+    
+    if 'wind' in estado.keys():
+        try:
+            vento_dir = estado['wind']['deg']
+            vento_veloc = estado['wind']['speed']
+        except:
+            vento_dir = 0
+            vento_veloc = 0
+    else:
+        vento_dir = ''
+        vento_veloc = 0
     nuvens = estado['clouds']['all']
     str_tempo, icone = formatar_tempo(tempo,'','',ahora)
         
