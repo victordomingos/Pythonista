@@ -116,7 +116,7 @@ def converter_vento(graus, metros_p_segundo):
         kmph = int(metros_p_segundo*3.6)
         return (direcoes[posicao], kmph)
     else:
-        return ('',kmph)
+        return ('', 0)
 
 
 def obter_nuvens(json):
