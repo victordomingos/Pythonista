@@ -1,6 +1,6 @@
 '''
-A little utility to check the weather forecast for the next few days. This 
-version is custom made for iPhone, so it uses Pythonista 3. It makes use of 
+A little utility to check the weather forecast for the next few days. This
+version is custom made for iPhone, so it uses Pythonista 3. It makes use of
 the web API provided by openweathermap.org and requires 'arrow' (which you can
 install with pip using StaSh).
 
@@ -12,9 +12,8 @@ Developed in Python 3.5 for your enjoyment by:
 Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 '''
 
-import requests 
+import requests
 import sys
-import json
 import arrow
 import console
 import datetime
@@ -35,7 +34,8 @@ APIKEY = 'APIKEY'
 API_URL_CURRENT = 'http://api.openweathermap.org/data/2.5/weather'
 API_URL = 'http://api.openweathermap.org/data/2.5/forecast'
 
-# Default location to present in case it is not possible to obtain current location.
+# Default location to present in case it is not possible to obtain current
+# location.
 LOCATION = 'Braga,pt'
 
 # Get current location from the device's GPS?
@@ -60,8 +60,8 @@ def config_consola(localizacao):
     Sets console font size and color for Pythonista on iOS
     '''
     console.clear()
-    console.set_color(.5,.5,.5)
-    console.set_font("Menlo-Bold",HEADER_FONTSIZE)
+    console.set_color(.5, .5, .5)
+    console.set_font("Menlo-Bold", HEADER_FONTSIZE)
     
     if DARK_MODE:
         console.set_color(0.5, 0.8, 1)
@@ -69,7 +69,7 @@ def config_consola(localizacao):
         console.set_color(0.2, 0.5, 1)
     
     line_length = 32
-    if len(localizacao+__app_name__+' ')> line_length:
+    if len(localizacao + __app_name__ + ' ') > line_length:
         str_title = "{}\n({})".format(__app_name__, localizacao)
     else:
         str_title = "{} ({})".format(__app_name__, localizacao)
@@ -88,7 +88,7 @@ def config_consola(localizacao):
     if DARK_MODE:
         console.set_color(1, 1, 1)
     else:
-        console.set_color(0,0,0)
+        console.set_color(0, 0, 0)
 
 
 def obter_localizacao():
@@ -97,9 +97,10 @@ def obter_localizacao():
         results = location.reverse_geocode(coordinates)
         cidade = results[0]['City']
         pais = results[0]['CountryCode']
-        return '{},{}'.format(cidade,pais)
-    except Exception as e:
-        print('Não foi possível obter a localização atual.\nA utilizar predefinição...\n')
+        return '{},{}'.format(cidade, pais)
+    except Exception:
+        print('Não foi possível obter a localização atual.'
+              '\nA utilizar predefinição...\n')
         return LOCATION
         
 
@@ -111,7 +112,7 @@ def dayNameFromWeekday(weekday):
 
 def converter_vento(graus, metros_p_segundo):
     if graus != 0:
-        direcoes = ["N","NE","E","SE","S","SO","O","NO","N"]
+        direcoes = ["N", "NE", "E", "SE", "S", "SO", "O", "NO", "N"]
         posicao = int((graus+57.5)/45)-1
         kmph = int(metros_p_segundo*3.6)
         return (direcoes[posicao], kmph)
@@ -139,7 +140,7 @@ def obter_humidade(json):
     return humidade_str
 
         
-def formatar_tempo(tempo,icone,chuva,ahora):
+def formatar_tempo(tempo, icone, chuva, ahora):
     tempo = tempo.replace('Garoa Fraca', 'Possib. Chuviscos Fracos')
     if tempo == 'Céu Claro':
         tempo = 'Céu Limpo'
@@ -170,7 +171,7 @@ def get_weather_data(location=None, kind='forecast'):
     else:
         api_URL = API_URL_CURRENT
         
-    try:            
+    try:
         console.show_activity()
         params = {'q': location,
                   'APPID': APIKEY,
@@ -178,24 +179,23 @@ def get_weather_data(location=None, kind='forecast'):
                   'lang': 'pt',
                   'mode': 'json'}
                   
-        json_data = requests.get(api_URL, params=params, timeout=(2,5)).json()
+        json_data = requests.get(api_URL, params=params, timeout=(2, 5)).json()
         console.hide_activity()
         return json_data
         
-    except Exception as e:            
+    except Exception as e:
         print(e)
         sys.exit(1)
 
 
 def mostra_previsao(localizacao):
-    previsoes = get_weather_data(location=localizacao,kind='forecast')['list']
-    agora = arrow.now().time().hour
+    previsoes = get_weather_data(location=localizacao, kind='forecast')['list']
     aagora = arrow.now()
     
     data_anterior = ''
     
-    for previsao in previsoes:             
-        icone = ''       
+    for previsao in previsoes:
+        icone = ''
         data = previsao['dt_txt'].split()[0]
         
         adata = arrow.get(previsao['dt']).to('local')
@@ -203,7 +203,6 @@ def mostra_previsao(localizacao):
          
         hoje = arrow.now().date().day
         adata_dia = adata.date().day
-        adata_hora = adata.time().hour
         
         if (adata-aagora <= datetime.timedelta(hours=+24)):
             show_more_info = True
@@ -211,7 +210,7 @@ def mostra_previsao(localizacao):
             show_more_info = False
         
         if (not DETAILED) and (not show_more_info):
-            if ahora in ('04h','07h','22h','01h'):
+            if ahora in ('04h', '07h', '22h', '01h'):
                 if ahora is '01h':
                     data_anterior = data
                 continue
@@ -223,16 +222,14 @@ def mostra_previsao(localizacao):
         arr_data = arrow.get(data)
         data_curta = arr_data.format('DD/MM')
         
-        if 'rain' in previsao.keys():
-            if '3h' in previsao['rain'].keys():
-                tempo, chuva, icone = formatar_chuva(tempo,previsao['rain']['3h'])
-            else:
-                chuva = ''
-        else:
+        if 'rain' not in previsao.keys():
             chuva = ''
+        elif '3h' in previsao['rain'].keys():
+            tempo, chuva, icone = formatar_chuva(tempo,
+                                                 previsao['rain']['3h'], '')
             
         nuvens_str = obter_nuvens(previsao)
-        humidade = obter_humidade(previsao)
+        # humidade = obter_humidade(previsao)
         
         line_size = 48
         str_dia = ''
@@ -266,10 +263,10 @@ def mostra_previsao(localizacao):
         if DARK_MODE:
             console.set_color(1, 1, 1)
         else:
-            console.set_color(0,0,0)
+            console.set_color(0, 0, 0)
         
         console.set_font("Menlo-Regular", TABLE_FONTSIZE)
-        tempo, icone = formatar_tempo(tempo,icone,chuva,ahora)
+        tempo, icone = formatar_tempo(tempo, icone, chuva, ahora)
         
         print(' ', ahora, temperatura, icone, tempo, nuvens_str)
         data_anterior = data
@@ -294,12 +291,14 @@ def mostra_estado_atual(localizacao):
     else:
         vento_dir = ''
         vento_veloc = 0
-    nuvens = estado['clouds']['all']
-    str_tempo, icone = formatar_tempo(tempo,'','',ahora)
+    # nuvens = estado['clouds']['all']
+    str_tempo, icone = formatar_tempo(tempo, '', '', ahora)
         
     if 'rain' in estado.keys():
         if '3h' in estado['rain'].keys():
-            tempo, chuva, icone = formatar_chuva(tempo,estado['rain']['3h'])
+            tempo, chuva, icone = formatar_chuva(tempo,
+                                                 estado['rain']['3h'],
+                                                 '')
         else:
             chuva = ''
     else:
@@ -316,9 +315,9 @@ def mostra_estado_atual(localizacao):
     
     direcao, velocidade = converter_vento(vento_dir, vento_veloc)
     
-    str_humidade = 12*' ' + 'Humidade: ' + humidade
+    str_humidade = '{}Humidade: {}'.format(12*' ', humidade)
     str_pressao = 12*' ' + 'Pressão: ' + pressao
-    str_vento = '\n' + 13*' ' + 'Vento: ' + direcao + ' ' + str(velocidade)+'km/h'
+    str_vento = '\n{}Vento: {} {}km/h'.format(13*' ', direcao, str(velocidade))
     
     str_nascer = 'Amanhecer: ' + ahora_nascer + '         '
     str_por = 'Anoitecer: ' + ahora_por + '         '
@@ -332,15 +331,15 @@ def mostra_estado_atual(localizacao):
     console.set_font("Menlo-Regular", TODAY_FONTSIZE2)
     
     line_size2 = 44
-    str_line0 = '{} {} {}'.format(str_tempo,nuvens_str,chuva)
+    str_line0 = '{} {} {}'.format(str_tempo, nuvens_str, chuva)
     line0_spaces = ' '*int((line_size2-len(str_line0))/2)
-    print(line0_spaces,str_line0)
+    print(line0_spaces, str_line0)
     
     console.set_font("Menlo-Regular", TABLE_FONTSIZE-1)
     print(str_vento)
     
-    str1 = ' {}{}{}'.format(str_humidade,line1_spaces, str_nascer)
-    str2 = ' {}{}{}'.format(str_pressao,line2_spaces, str_por)
+    str1 = ' {}{}{}'.format(str_humidade, line1_spaces, str_nascer)
+    str2 = ' {}{}{}'.format(str_pressao, line2_spaces, str_por)
     print(str1+'\n'+str2+'\n')
     
 
@@ -348,7 +347,7 @@ def formatar_chuva(tempo, que_chuva):
     chuva = str(que_chuva)
     fchuva = float(chuva)
     
-    chuva = '({}mm/h)'.format(str(round(fchuva/3,1)))
+    chuva = '({}mm/h)'.format(str(round(fchuva/3, 1)))
     icone = '🌧'
     
     if fchuva < .75:
