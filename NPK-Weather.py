@@ -226,7 +226,7 @@ def mostra_previsao(localizacao):
             chuva = ''
         elif '3h' in previsao['rain'].keys():
             tempo, chuva, icone = formatar_chuva(tempo,
-                                                 previsao['rain']['3h'], '')
+                                                 previsao['rain']['3h'])
             
         nuvens_str = obter_nuvens(previsao)
         # humidade = obter_humidade(previsao)
