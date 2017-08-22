@@ -150,6 +150,8 @@ def formatar_tempo(tempo, icone, chuva, ahora):
         icone = '☁️'
     elif ('Neblina' in tempo):
         icone = '🌤'
+    elif ('Névoa' in tempo):
+        icone = '🌤'
         
     if 'Chuva' in tempo:
         tempo = tempo + ' ' + chuva
