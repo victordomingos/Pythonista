@@ -85,7 +85,9 @@ def config_consola(localizacao):
     
 def obter_localizacao():
     try:
+        console.show_activity()
         coordinates = location.get_location()
+        console.hide_activity()
         results = location.reverse_geocode(coordinates)
         cidade = results[0]['City']
         pais = results[0]['CountryCode']
@@ -93,6 +95,7 @@ def obter_localizacao():
     except Exception:
         print('Não foi possível obter a localização atual.'
               '\nA utilizar predefinição...\n')
+        console.hide_activity()
         return LOCATION
         
 
@@ -196,6 +199,7 @@ def get_weather_data(location=None, kind='forecast'):
         
     except Exception as e:
         print(e)
+        console.hide_activity()
         sys.exit(1)
 
 
@@ -386,12 +390,10 @@ def formatar_chuva(tempo, que_chuva):
         
 
 if __name__ == "__main__":
-    console.show_activity()
     if USE_LOCATION_SERVICES:
         localizacao = obter_localizacao()
     else:
         localizacao = LOCATION
-    console.hide_activity()
     config_consola(localizacao)
     mostra_estado_atual(localizacao)
     mostra_previsao(localizacao)
