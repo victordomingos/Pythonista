@@ -213,6 +213,7 @@ def mostra_previsao(localizacao):
     
     for previsao in previsoes:
         icone = ''
+        chuva = ''
         data = previsao['dt_txt'].split()[0]
         
         adata = arrow.get(previsao['dt']).to('local')
