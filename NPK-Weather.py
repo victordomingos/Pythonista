@@ -58,10 +58,6 @@ DARK_MODE = True
 # ----------------------------------------------------
 
 
-q_estado_atual = Queue()
-q_previsoes = Queue()
-
-
 def config_consola(localizacao):
     '''
     Sets console font size and color for Pythonista on iOS
@@ -169,7 +165,7 @@ def formatar_tempo(tempo, icone, chuva, ahora):
     
     if tempo == 'Céu Claro':
         tempo = 'Céu Limpo'
-        if ahora in ['22h', '01h', '04h']:
+        if ahora in ('22h', '01h', '04h'):
             icone = '🌙'
         else:
             icone = '☀️'
@@ -235,13 +231,10 @@ def get_weather_data(location=None, kind='forecast'):
 def mostra_previsao(previsoes):
     aagora = arrow.now()
     
-    data_anterior = ''
-    txt_previsao = ''
-    nova_linha = ''
+    data_anterior = txt_previsao = nova_linha = ''
     
     for previsao in previsoes:
-        icone = ''
-        chuva = ''
+        icone = chuva = ''
         data = previsao['dt_txt'].split()[0]
         
         adata = arrow.get(previsao['dt']).to('local')
@@ -278,8 +271,7 @@ def mostra_previsao(previsoes):
         # humidade = obter_humidade(previsao)
         
         line_size = 48
-        str_dia = ''
-        spaces = ''
+        str_dia = spaces = ''
         
         if data_anterior == '':
             if hoje == adata_dia:
@@ -418,6 +410,9 @@ def formatar_chuva(tempo, que_chuva):
 
 
 if __name__ == "__main__":
+    q_estado_atual = Queue()
+    q_previsoes = Queue()
+    
     if USE_LOCATION_SERVICES:
         localizacao = obter_localizacao()
     else:
