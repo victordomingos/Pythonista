@@ -18,6 +18,9 @@ import arrow
 import console
 import datetime
 import location
+import threading
+
+from queue import Queue
 
 __app_name__ = "The NPK Weather App"
 __author__ = "Victor Domingos"
@@ -55,6 +58,10 @@ DARK_MODE = True
 # ----------------------------------------------------
 
 
+q_estado_atual = Queue()
+q_previsoes = Queue()
+
+
 def config_consola(localizacao):
     '''
     Sets console font size and color for Pythonista on iOS
@@ -86,7 +93,9 @@ def config_consola(localizacao):
 def obter_localizacao():
     try:
         console.show_activity()
+        location.start_updates()
         coordinates = location.get_location()
+        location.stop_updates()
         console.hide_activity()
         results = location.reverse_geocode(coordinates)
         cidade = results[0]['City']
@@ -97,7 +106,26 @@ def obter_localizacao():
               '\nA utilizar predefinição...\n')
         console.hide_activity()
         return LOCATION
-        
+
+     
+def obter_estados(localizacao):
+    '''
+    old version, to be used by non-threaded calls
+    '''
+    estado_atual = get_weather_data(location=localizacao, kind='current')
+    previsoes = get_weather_data(location=localizacao, kind='forecast')['list']
+    return estado_atual, previsoes
+
+
+def obter_estado_atual(q, localizacao):
+    estado_atual = get_weather_data(location=localizacao, kind='current')
+    q.put(estado_atual)
+
+      
+def obter_previsoes(q, localizacao):
+    previsoes = get_weather_data(location=localizacao, kind='forecast')['list']
+    q.put(previsoes)
+
 
 def dayNameFromWeekday(weekday):
     days = ["Segunda-feira", "Terça-feira", "Quarta-feira",
@@ -137,26 +165,27 @@ def obter_humidade(json):
         
 def formatar_tempo(tempo, icone, chuva, ahora):
     tempo = tempo.replace('Garoa Fraca', 'Possib. Chuviscos Fracos')
+    tempo = tempo.replace('Nuvens Quebrados', 'Céu Muito Nublado')
+    
     if tempo == 'Céu Claro':
         tempo = 'Céu Limpo'
         if ahora in ['22h', '01h', '04h']:
             icone = '🌙'
         else:
             icone = '☀️'
-    elif tempo == 'Nuvens Quebrados':
-        tempo = 'Céu Muito Nublado'
+    elif tempo == 'Céu Muito Nublado':
         icone = '☁️'
     elif tempo in ('Algumas Nuvens', 'Nuvens Dispersas'):
         tempo = 'Céu Pouco Nublado'
         icone = '⛅️'
-    elif ('Nublado' in tempo):
+    elif ('Nublado' in tempo) or ('Possib. Chuviscos Fracos' in tempo):
         icone = '☁️'
     elif ('Neblina' in tempo):
         icone = '🌤'
     elif ('Névoa' in tempo):
         icone = '🌤'
         
-    if 'Chuva' in tempo:
+    if ('Chuva' in tempo) or ('Chuviscos' in tempo):
         tempo = tempo + ' ' + chuva
 
     return (tempo, icone)
@@ -201,10 +230,9 @@ def get_weather_data(location=None, kind='forecast'):
         print(e)
         console.hide_activity()
         sys.exit(1)
+    
 
-
-def mostra_previsao(localizacao):
-    previsoes = get_weather_data(location=localizacao, kind='forecast')['list']
+def mostra_previsao(previsoes):
     aagora = arrow.now()
     
     data_anterior = ''
@@ -297,8 +325,7 @@ def mostra_previsao(localizacao):
     print(txt_previsao)
 
 
-def mostra_estado_atual(localizacao):
-    estado = get_weather_data(location=localizacao, kind='current')
+def mostra_estado_atual(estado):
     adata = arrow.get(estado['dt']).to('local')
     ahora = adata.to('local').format('HH')+'h'
     temperatura_int = int(estado['main']['temp'])
@@ -388,7 +415,7 @@ def formatar_chuva(tempo, que_chuva):
     elif 48 <= fchuva:
         chuva += '💦💦☔️💦💦'
     return (tempo, chuva, icone)
-        
+
 
 if __name__ == "__main__":
     if USE_LOCATION_SERVICES:
@@ -396,5 +423,30 @@ if __name__ == "__main__":
     else:
         localizacao = LOCATION
     config_consola(localizacao)
-    mostra_estado_atual(localizacao)
-    mostra_previsao(localizacao)
+    
+    '''
+    # Using non-threaded connections here:
+    estado_atual, previsoes = obter_estados(localizacao)
+    mostra_estado_atual(estado_atual)
+    mostra_previsao(previsoes)
+    '''
+    
+    # Using threaded connections after this line.
+    daemon1 = threading.Thread(target=obter_estado_atual,
+                               args=(q_estado_atual, localizacao))
+    daemon1.setDaemon(True)
+    daemon1.start()
+    
+    daemon2 = threading.Thread(target=obter_previsoes,
+                               args=(q_previsoes, localizacao))
+    daemon2.setDaemon(True)
+    daemon2.start()
+    
+    q_estado_atual.join()
+    q_previsoes.join()
+    
+    estado_atual = q_estado_atual.get()
+    previsoes = q_previsoes.get()
+    
+    mostra_estado_atual(estado_atual)
+    mostra_previsao(previsoes)
