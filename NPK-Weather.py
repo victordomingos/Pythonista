@@ -26,7 +26,7 @@ __app_name__ = "The NPK Weather App"
 __author__ = "Victor Domingos"
 __copyright__ = "© 2017 Victor Domingos"
 __license__ = "Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)"
-__version__ = "1.1"
+__version__ = "1.2"
 __email__ = "info@victordomingos.com"
 __status__ = "beta"
 
