@@ -255,7 +255,7 @@ def mostra_previsao(previsoes):
                 continue
         
         temperatura_int = int(previsao['main']['temp'])
-        temperatura = str(temperatura_int)+'°'
+        temperatura = '{}°'.format(str(temperatura_int).rjust(2))
         tempo = previsao['weather'][0]['description'].title()
         
         arr_data = arrow.get(data)
