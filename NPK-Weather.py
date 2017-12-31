@@ -26,10 +26,9 @@ __app_name__ = "The NPK Weather App"
 __author__ = "Victor Domingos"
 __copyright__ = "© 2017 Victor Domingos"
 __license__ = "Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)"
-__version__ = "1.2"
+__version__ = "1.3"
 __email__ = "info@victordomingos.com"
 __status__ = "beta"
-
 
 # ---------- Set these variables before use ----------
 # Request an API key at: http://openweathermap.org/
@@ -55,6 +54,7 @@ DETAILED = False
 
 # Set accordingly with Pythonista app current settings
 DARK_MODE = True
+
 # ----------------------------------------------------
 
 
@@ -83,7 +83,7 @@ def config_consola(localizacao):
         console.set_color(0.7, 0.7, 0.7)
     else:
         console.set_color(0.5, 0.5, 0.5)
-    print('{}, {}\n\n'.format(__copyright__, __license__))
+    print(f'{__copyright__}, {__license__}\n\n')
 
 
 def obter_localizacao():
@@ -96,7 +96,7 @@ def obter_localizacao():
         results = location.reverse_geocode(coordinates)
         cidade = results[0]['City']
         pais = results[0]['CountryCode']
-        return '{},{}'.format(cidade, pais)
+        return f'{cidade},{pais}'
     except Exception:
         print('Não foi possível obter a localização atual.'
               '\nA utilizar predefinição...\n')
@@ -115,8 +115,10 @@ def obter_previsoes(q, localizacao):
 
 
 def dayNameFromWeekday(weekday):
-    days = ["Segunda-feira", "Terça-feira", "Quarta-feira",
-            "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+    days = [
+        "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira",
+        "Sexta-feira", "Sábado", "Domingo"
+    ]
     return days[weekday] if -1 < weekday < len(days) else None
 
 
@@ -171,7 +173,9 @@ def formatar_tempo(tempo, icone, chuva, ahora):
         icone = '🌤'
     elif ('Névoa' in tempo):
         icone = '🌤'
-
+    elif tempo == 'Chuva De Intensidade Pesado':
+        tempo = 'Chuva Forte'
+        
     if ('Chuva' in tempo) or ('Chuviscos' in tempo):
         tempo = tempo + ' ' + chuva
 
@@ -203,11 +207,13 @@ def get_weather_data(location=None, kind='forecast'):
 
     try:
         console.show_activity()
-        params = {'q': location,
-                  'APPID': APIKEY,
-                  'units': 'metric',
-                  'lang': 'pt',
-                  'mode': 'json'}
+        params = {
+            'q': location,
+            'APPID': APIKEY,
+            'units': 'metric',
+            'lang': 'pt',
+            'mode': 'json'
+        }
 
         json_data = requests.get(api_URL, params=params, timeout=(2, 5)).json()
         console.hide_activity()
@@ -240,14 +246,14 @@ def mostra_previsao(previsoes):
             show_more_info = False
 
         if (not DETAILED) and (not show_more_info):
-            if ahora in ('04h', '03h', '07h',
-                         '06h', '22h', '23h', '01h', '00h'):
+            if ahora in ('04h', '03h', '07h', '06h', '22h', '23h', '01h',
+                         '00h'):
                 if (ahora is '01h'):
                     data_anterior = data
                 continue
 
         temperatura_int = int(previsao['main']['temp'])
-        temperatura = '{}°'.format(str(temperatura_int).rjust(2))
+        temperatura = f'{str(temperatura_int).rjust(2)}°'
         tempo = previsao['weather'][0]['description'].title()
 
         arr_data = arrow.get(data)
@@ -256,8 +262,7 @@ def mostra_previsao(previsoes):
         if 'rain' not in previsao.keys():
             chuva = ''
         elif '3h' in previsao['rain'].keys():
-            tempo, chuva, icone = formatar_chuva(tempo,
-                                                 previsao['rain']['3h'])
+            tempo, chuva, icone = formatar_chuva(tempo, previsao['rain']['3h'])
 
         nuvens_str = obter_nuvens(previsao)
         # humidade = obter_humidade(previsao)
@@ -300,9 +305,7 @@ def mostra_previsao(previsoes):
 
         tempo, icone = formatar_tempo(tempo, icone, chuva, ahora)
 
-        txt_previsao = '{}{}  {} {} {} {} {}'.format(
-            txt_previsao, nova_linha,
-            ahora, temperatura, icone, tempo, nuvens_str)
+        txt_previsao = f'{txt_previsao}{nova_linha}  {ahora} {temperatura} {icone} {tempo} {nuvens_str}'
         data_anterior = data
 
     set_forecast_font()
@@ -346,13 +349,12 @@ def mostra_estado_atual(estado):
 
     direcao, velocidade = converter_vento(vento_dir, vento_veloc)
 
-    str_humidade = '{}Humidade: {}'.format(12 * ' ', humidade)
-    str_pressao = 12 * ' ' + 'Pressão: ' + pressao
-    str_vento = '\n{}Vento: {} {}km/h'.format(13 * ' ', direcao,
-                                              str(velocidade))
+    str_humidade = f'{8*" "}💦 Humidade: {humidade}'
+    str_pressao = 8 * ' ' + '🕛 Pressão: ' + pressao
+    str_vento = f'\n{9*" "}💨 Vento: {direcao} {str(velocidade)}km/h\n'
 
-    str_nascer = 'Amanhecer: ' + ahora_nascer + '         '
-    str_por = 'Anoitecer: ' + ahora_por + '         '
+    str_nascer = f'    ☀️ Amanhecer: {ahora_nascer}         '
+    str_por = f'🌙 Anoitecer: {ahora_por}         '
 
     line_size = 56
     line1_spaces = ' ' * (line_size - len(str_humidade) - len(str_nascer))
@@ -373,18 +375,17 @@ def mostra_estado_atual(estado):
     print(line0_spaces, str_line0)
 
     console.set_font("Menlo-Regular", TABLE_FONTSIZE - 1)
-    print(str_vento)
 
-    str1 = ' {}{}{}'.format(str_humidade, line1_spaces, str_nascer)
-    str2 = ' {}{}{}'.format(str_pressao, line2_spaces, str_por)
-    print(str1 + '\n' + str2 + '\n')
+    str1 = f' {str_humidade}{line1_spaces}{str_nascer}\n'
+    str2 = f' {str_pressao}{line2_spaces}{str_por}\n'
+    print(str_vento + str1 + str2)
 
 
 def formatar_chuva(tempo, que_chuva):
     chuva = str(que_chuva)
     fchuva = float(chuva)
 
-    chuva = '({}mm/h)'.format(str(round(fchuva / 3, 1)))
+    chuva = f'({str(round(fchuva / 3, 1))}mm/h)'
     icone = '🌧'
 
     if fchuva < .75:
@@ -412,14 +413,13 @@ if __name__ == "__main__":
         localizacao = LOCATION
     config_consola(localizacao)
 
-
-    daemon1 = threading.Thread(target=obter_estado_atual,
-                               args=(q_estado_atual, localizacao))
+    daemon1 = threading.Thread(
+        target=obter_estado_atual, args=(q_estado_atual, localizacao))
     daemon1.setDaemon(True)
     daemon1.start()
 
-    daemon2 = threading.Thread(target=obter_previsoes,
-                               args=(q_previsoes, localizacao))
+    daemon2 = threading.Thread(
+        target=obter_previsoes, args=(q_previsoes, localizacao))
     daemon2.setDaemon(True)
     daemon2.start()
 
