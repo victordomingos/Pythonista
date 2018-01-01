@@ -21,6 +21,7 @@ import location
 import threading
 
 from queue import Queue
+from objc_util import ObjCInstance, ObjCClass, ObjCBlock, c_void_p
 
 __app_name__ = "The NPK Weather App"
 __author__ = "Victor Domingos"
@@ -42,6 +43,7 @@ LOCATION = 'Braga,pt'
 
 # Get current location from the device's GPS?
 USE_LOCATION_SERVICES = True
+USE_BAROMETER = True
 
 HEADER_FONTSIZE = 16
 TITLE_FONTSIZE = 12
@@ -56,6 +58,8 @@ DETAILED = False
 DARK_MODE = True
 
 # ----------------------------------------------------
+
+pressure = None
 
 
 def config_consola(localizacao):
@@ -102,6 +106,35 @@ def obter_localizacao():
               '\nA utilizar predefinição...\n')
         console.hide_activity()
         return LOCATION
+
+
+def get_pressure():
+    ''' Obter a pressão atmosférica do barómetro do próprio dispositivo, se
+    existir '''
+
+    def handler(_cmd, _data, _error):
+        global pressure
+        pressure = ObjCInstance(_data).pressure()
+
+    handler_block = ObjCBlock(
+        handler, restype=None, argtypes=[c_void_p, c_void_p, c_void_p])
+
+    CMAltimeter = ObjCClass('CMAltimeter')
+    NSOperationQueue = ObjCClass('NSOperationQueue')
+    if not CMAltimeter.isRelativeAltitudeAvailable():
+        # print('This device has no barometer.')
+        return None
+    altimeter = CMAltimeter.new()
+    main_q = NSOperationQueue.mainQueue()
+    altimeter.startRelativeAltitudeUpdatesToQueue_withHandler_(
+        main_q, handler_block)
+
+    try:
+        while pressure is None:
+            pass
+    finally:
+        altimeter.stopRelativeAltitudeUpdates()
+        return pressure.floatValue() * 7.5006375541921
 
 
 def obter_estado_atual(q, localizacao):
@@ -175,7 +208,7 @@ def formatar_tempo(tempo, icone, chuva, ahora):
         icone = '🌤'
     elif tempo == 'Chuva De Intensidade Pesado':
         tempo = 'Chuva Forte'
-        
+
     if ('Chuva' in tempo) or ('Chuviscos' in tempo):
         tempo = tempo + ' ' + chuva
 
@@ -318,7 +351,20 @@ def mostra_estado_atual(estado):
     temperatura_int = int(estado['main']['temp'])
     temperatura = str(temperatura_int) + '°'
     tempo = estado['weather'][0]['description'].title()
-    pressao = str(estado['main']['pressure']) + 'hPa'
+
+    pressao_ = None
+    mens_barometro = ""
+
+    if USE_BAROMETER:
+        try:
+            pressao_ = get_pressure()
+            mens_barometro = "(Barómetro do dispositivo)"
+        except:
+            pressao_ = float(estado['main']['pressure']) * 0.75006375541921
+    else:
+        pressao_ = float(estado['main']['pressure']) * 0.75006375541921
+
+    pressao = f'{pressao_:.2f}mmHg'
 
     if 'wind' in estado.keys():
         try:
@@ -349,12 +395,12 @@ def mostra_estado_atual(estado):
 
     direcao, velocidade = converter_vento(vento_dir, vento_veloc)
 
-    str_humidade = f'{8*" "}💦 Humidade: {humidade}'
-    str_pressao = 8 * ' ' + '🕛 Pressão: ' + pressao
-    str_vento = f'\n{9*" "}💨 Vento: {direcao} {str(velocidade)}km/h\n'
+    str_humidade = f'{6*" "}💦 Humidade: {humidade}'
+    str_pressao = 6 * ' ' + '🕛 Pressão: ' + pressao
+    str_vento = f'\n{7*" "}💨 Vento: {direcao} {str(velocidade)}km/h\n'
 
-    str_nascer = f'    ☀️ Amanhecer: {ahora_nascer}         '
-    str_por = f'🌙 Anoitecer: {ahora_por}         '
+    str_nascer = f'☀️ Amanhecer: {ahora_nascer}    '
+    str_por = f'🌙 Anoitecer: {ahora_por}     '
 
     line_size = 56
     line1_spaces = ' ' * (line_size - len(str_humidade) - len(str_nascer))
@@ -377,8 +423,19 @@ def mostra_estado_atual(estado):
     console.set_font("Menlo-Regular", TABLE_FONTSIZE - 1)
 
     str1 = f' {str_humidade}{line1_spaces}{str_nascer}\n'
-    str2 = f' {str_pressao}{line2_spaces}{str_por}\n'
+    str2 = f' {str_pressao}{line2_spaces}{str_por}'
     print(str_vento + str1 + str2)
+    console.set_font("Menlo-Regular", 6.7)
+
+    if DARK_MODE:
+        console.set_color(0.7, 0.7, 0.7)
+    else:
+        console.set_color(0.5, 0.5, 0.5)
+
+    if USE_BAROMETER:
+        print(f"{14*' '}{mens_barometro}\n")
+    else:
+        print('')
 
 
 def formatar_chuva(tempo, que_chuva):
