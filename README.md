@@ -1,6 +1,3 @@
-# Pythonista
-My experiences with programming for iOS in Pythonista.
-
 ## THE NPK Weather App
 A little utility to check the weather forecast for the next few days. This 
 version is custom made for iPhone, so it uses Pythonista 3. It makes use of 
