@@ -1,4 +1,4 @@
-## THE NPK Weather App
+## The NPK Weather App
 A little utility to check the weather forecast for the next few days. This 
 version is custom made for iPhone, so it uses Pythonista 3. It makes use of 
 the web API provided by openweathermap.org and requires 'arrow' (which you can
