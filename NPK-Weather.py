@@ -189,7 +189,7 @@ def formatar_tempo(tempo, icone, chuva, ahora):
     tempo = tempo.replace('Garoa Fraca', 'Possib. Chuviscos Fracos')
     tempo = tempo.replace('Nuvens Quebrados', 'Céu Muito Nublado')
 
-    if tempo == 'Céu Claro':
+    if tempo == 'Céu Limpo' or tempo == 'Céu Claro':
         tempo = 'Céu Limpo'
         if ahora in ('22h', '01h', '04h'):
             icone = '🌙'
