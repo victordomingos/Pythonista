@@ -351,7 +351,8 @@ def mostra_estado_atual(estado):
     temperatura_int = int(estado['main']['temp'])
     temperatura = str(temperatura_int) + '°'
     tempo = estado['weather'][0]['description'].title()
-
+    chuva = ''
+    
     pressao_ = None
     mens_barometro = ""
 
